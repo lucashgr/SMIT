@@ -13,10 +13,23 @@ import threading
 import base64
 from io import BytesIO
 import time
+import sys
 
 plt.close("all")
 plt.rcParams.update({'font.family': 'Times New Roman', 'font.size': 24})
 plt.rcParams['lines.linewidth'] = 1
+
+def resource_path(relative_path):
+    """Retorna o caminho absoluto para o recurso, considerando execução como executável."""
+    if hasattr(sys, '_MEIPASS'):
+        # Quando executado como executável
+        return os.path.join(sys._MEIPASS, relative_path)
+    else:
+        # Quando executado como script Python
+        return os.path.abspath(relative_path)
+
+# Caminho para a figura
+image_path = resource_path("logo_smit.png")
 
 def principal():
     j0.destroy()
@@ -61,7 +74,8 @@ def principal():
     frame_entradas = tk.Frame(j1)
     frame_entradas.pack()
 
-    img_org = Image.open(r"logo_smit.png")
+    # img_org = Image.open(r"logo_smit.png")
+    img_org = Image.open(image_path)
     escala_im = 0.2
     img_l = int(img_org.width * escala_im)
     img_h = int(img_org.height * escala_im)
@@ -244,7 +258,7 @@ def principal():
         x = j1.winfo_pointerx()
         y = j1.winfo_pointery()
         popup.geometry(f"+{x}+{y}")
-        message = tk.Label(popup, text="Quantidade de polos existentes no rotor da máquina", wraplength=300)
+        message = tk.Label(popup, text="Quantidade de polos existentes na máquina", wraplength=300)
         message.place(relx=0, rely=0)
         message.pack()
 
@@ -1077,9 +1091,9 @@ def principal():
             entry_j.insert(0, valor)
             valor = float(entry_j.get())
             entry_j.config(bg="white")
-            if valor<0:
+            if valor<=0:
                 entry_j.config(bg="red")
-                adicionar_mensagem(label_j.cget("text") + "Variável não pode ser negativa")
+                adicionar_mensagem(label_j.cget("text") + "Variável não pode ser igual ou menor que 0")
                 a += 1
         except ValueError:
             entry_j.config(bg="red")
@@ -1256,9 +1270,9 @@ def principal():
                 entry_rf.insert(0, valor)
                 valor = float(entry_rf.get())
                 entry_rf.config(bg="white")
-                if valor < 0:
+                if valor < 0.5:
                     entry_rf.config(bg="red")
-                    adicionar_mensagem(label_rf.cget("text") + " entrada fora do intervalo permitido (maior que 0)")
+                    adicionar_mensagem(label_rf.cget("text") + " entrada fora do intervalo permitido (maior que 0.5)")
                     a += 1
             except ValueError:
                 entry_rf.config(bg="red")
@@ -1641,12 +1655,12 @@ def principal():
             T_falha_nom = 0.0  #Falhas mecânicas
 
         # -------------------- CÁLCULOS --------------------#
-        t = np.arange(0, tfinal + dt, dt)
+        t = np.arange(dt, tfinal, dt)
         Vmax = V * np.sqrt(2)/np.sqrt(3)
         J_nom = J_nom * 2 / P
         we = 2 * np.pi * f
         baldefnom=v_nom*P/120
-        if 60-baldefnom>50:
+        if baldefnom>50:
             fnom=60
         else:
             fnom=50
@@ -1839,7 +1853,7 @@ def principal():
 
             # FALHA MECÂNICA
             if T_falha_nom > 0 and c_t == 2:
-                T_falha = T_falha_nom * np.cos(aux_mec * i)
+                T_falha = T_falha_nom * np.sin(aux_mec * i)
                 Tload = Tload_max + T_falha
 
             # SINAIS DE TENSÃO
@@ -1847,6 +1861,7 @@ def principal():
                 va = deseqamp * Vmax * np.cos(we * i + deseqang)
                 vb = Vmax * np.cos(we * i - ang120)
                 vc = (-(va + vb))
+                # vc = Vmax * np.cos(we * i + ang120)
             # elif tipo_alim == 1:
             #     va_ref = deseqamp * Vmax * np.cos(we * i + deseqang)
             #     vb_ref = Vmax * np.cos(we * i - ang120)
@@ -1997,10 +2012,17 @@ def principal():
 
         plt.rcParams.update({'font.family': 'Times New Roman', 'font.size': 24})
         plt.rcParams['lines.linewidth'] = 1
+        plt.rcParams.update({
+            'axes.grid': True,  # Ativa a grade principal
+            'grid.color': 'gray',  # Cor da grade
+            'grid.linestyle': '--',  # Estilo da linha da grade
+            'grid.alpha': 0.7,  # Transparência da grade
+            'grid.linewidth': 0.8,  # Largura da linha da grade
+        })
         if var[6]:
             plt.figure(1)
             plt.plot(t, Z[vel_index, :])
-            plt.title("Velocidade do motor")
+            # plt.title("Velocidade do motor")
             plt.ylabel("Velocidade (rpm)")
             plt.xlabel("Tempo (s)")
 
@@ -2076,82 +2098,82 @@ def principal():
                 plt.ylabel("Corrente (dB)")
                 plt.xlabel("Frequência (Hz)")
 
-                jfalha = tk.Toplevel()
-                jfalha.title("Indicadores de Falha")
-                texto = tk.Text(jfalha, wrap="word", state=tk.DISABLED)
-                texto.pack(fill=tk.BOTH, expand=True)
-
-                def adicionar_mensagem(mensagem):
-                    texto.config(state=tk.NORMAL)
-                    texto.insert(tk.END, mensagem + "\n")
-                    texto.config(state=tk.DISABLED)
-                    texto.see(tk.END)
-
-                # -------------------Detecção de Falha Mecânica-------------------#
-                freq_mec = f - vel / f
-                mec_db = -99999
-                for i in range(len(y)):
-                    if y[i] > mec_db and (freq_mec - 10) < freq[i] < (freq_mec + 10):
-                        mec_db = y[i]
-                adicionar_mensagem("Componente da Falha Mecânica: " + str(round(mec_db, 4)) + " dB")
-
-                # -------------------Detecção de Curto Circuito-------------------#
-                if deseqang != 0 or deseqamp != 1:
-                    wplano = -f * 2 * np.pi
-                    teta = 0
-                    Va = Z[V_index, :]
-                    Vb = Z[V_index + 1, :]
-                    Vc = Z[V_index + 2, :]
-                    Ia = Z[Is_index, :]
-                    Ib = Z[Is_index + 1, :]
-                    Ic = Z[Is_index + 2, :]
-                    Vqd = np.zeros([2, len(Va)], dtype=float)
-                    Iqd = np.zeros([2, len(Ia)], dtype=float)
-                    for i in range(len(Ia)):
-                        Iq, Id, I0 = abc2dq(Ia[i], Ib[i], Ic[i], teta)
-                        Vq, Vd, V0 = abc2dq(Va[i], Vb[i], Vc[i], teta)
-                        teta = (teta + wplano * dt) % (2 * np.pi)
-                        Iqd[0, i] = Iq[0]
-                        Iqd[1, i] = Id[0]
-                        Vqd[0, i] = Vq[0]
-                        Vqd[1, i] = Vd[0]
-                    Iq = np.mean(Iqd[0, :])
-                    Id = np.mean(Iqd[1, :])
-                    Vq = np.mean(Vqd[0, :])
-                    Vd = np.mean(Vqd[1, :])
-                    Is = np.sqrt(Iq ** 2 + Id ** 2)
-                    Vs = np.sqrt(Vq ** 2 + Vd ** 2)
-                    Zn = Vs / Is
-                    adicionar_mensagem("Impedância Negativa: " + str(round(Zn, 4)) + " Ohms")
-
-                # -------------------Detecção de Barras Quebradas-------------------#
-                f_amos = 1 / dt
-                cutoff = 12
-                ordem = 5
-                nyq = 0.5 * f_amos
-                normal_cutoff = cutoff / nyq
-                b, a = butter(ordem, normal_cutoff, btype='low', analog=False)
-                dT = Tv[aux_fft:] - Tc[aux_fft:]
-                dT = filtfilt(b, a, dT)
-                dT_aux = int(len(dT) * 0.1)
-                dT = dT[dT_aux:-dT_aux]
-                # plt.figure(21)
-                # plt.plot(Tv[aux_fft:])
-                # plt.plot(Tc[aux_fft:])
-                # plt.plot(dT)
-                # plt.figure(22)
-                # y = dT
-                # N = y.shape[0]
-                # win = np.hanning(N)
-                # [freq, y] = dbfft(y, 1 / (dt), win=win)
-                # plt.plot(freq, y)
-                # plt.xlim(0, 200)
-                # plt.ylim(-70, 45)
-                # plt.title("FFT do resíduo do conjugado")
-                # plt.ylabel("Conjugado (dB)")
-                # plt.xlabel("Frequência (Hz)")
-                rc = (max(dT) - min(dT)) / 2
-                adicionar_mensagem("Resíduo do Conjugado: " + str(round(rc, 4)) + " Nm")
+                # jfalha = tk.Toplevel()
+                # jfalha.title("Indicadores de Falha")
+                # texto = tk.Text(jfalha, wrap="word", state=tk.DISABLED)
+                # texto.pack(fill=tk.BOTH, expand=True)
+                #
+                # def adicionar_mensagem(mensagem):
+                #     texto.config(state=tk.NORMAL)
+                #     texto.insert(tk.END, mensagem + "\n")
+                #     texto.config(state=tk.DISABLED)
+                #     texto.see(tk.END)
+                #
+                # # -------------------Detecção de Falha Mecânica-------------------#
+                # freq_mec = f - vel / f
+                # mec_db = -99999
+                # for i in range(len(y)):
+                #     if y[i] > mec_db and (freq_mec - 10) < freq[i] < (freq_mec + 10):
+                #         mec_db = y[i]
+                # adicionar_mensagem("Componente da Falha Mecânica: " + str(round(mec_db, 4)) + " dB")
+                #
+                # # -------------------Detecção de Curto Circuito-------------------#
+                # if deseqang != 0 or deseqamp != 1:
+                #     wplano = -f * 2 * np.pi
+                #     teta = 0
+                #     Va = Z[V_index, :]
+                #     Vb = Z[V_index + 1, :]
+                #     Vc = Z[V_index + 2, :]
+                #     Ia = Z[Is_index, :]
+                #     Ib = Z[Is_index + 1, :]
+                #     Ic = Z[Is_index + 2, :]
+                #     Vqd = np.zeros([2, len(Va)], dtype=float)
+                #     Iqd = np.zeros([2, len(Ia)], dtype=float)
+                #     for i in range(len(Ia)):
+                #         Iq, Id, I0 = abc2dq(Ia[i], Ib[i], Ic[i], teta)
+                #         Vq, Vd, V0 = abc2dq(Va[i], Vb[i], Vc[i], teta)
+                #         teta = (teta + wplano * dt) % (2 * np.pi)
+                #         Iqd[0, i] = Iq[0]
+                #         Iqd[1, i] = Id[0]
+                #         Vqd[0, i] = Vq[0]
+                #         Vqd[1, i] = Vd[0]
+                #     Iq = np.mean(Iqd[0, :])
+                #     Id = np.mean(Iqd[1, :])
+                #     Vq = np.mean(Vqd[0, :])
+                #     Vd = np.mean(Vqd[1, :])
+                #     Is = np.sqrt(Iq ** 2 + Id ** 2)
+                #     Vs = np.sqrt(Vq ** 2 + Vd ** 2)
+                #     Zn = Vs / Is
+                #     adicionar_mensagem("Impedância Negativa: " + str(round(Zn, 4)) + " Ohms")
+                #
+                # # -------------------Detecção de Barras Quebradas-------------------#
+                # f_amos = 1 / dt
+                # cutoff = 12
+                # ordem = 5
+                # nyq = 0.5 * f_amos
+                # normal_cutoff = cutoff / nyq
+                # b, a = butter(ordem, normal_cutoff, btype='low', analog=False)
+                # dT = Tv[aux_fft:] - Tc[aux_fft:]
+                # dT = filtfilt(b, a, dT)
+                # dT_aux = int(len(dT) * 0.1)
+                # dT = dT[dT_aux:-dT_aux]
+                # # plt.figure(21)
+                # # plt.plot(Tv[aux_fft:])
+                # # plt.plot(Tc[aux_fft:])
+                # # plt.plot(dT)
+                # # plt.figure(22)
+                # # y = dT
+                # # N = y.shape[0]
+                # # win = np.hanning(N)
+                # # [freq, y] = dbfft(y, 1 / (dt), win=win)
+                # # plt.plot(freq, y)
+                # # plt.xlim(0, 200)
+                # # plt.ylim(-70, 45)
+                # # plt.title("FFT do resíduo do conjugado")
+                # # plt.ylabel("Conjugado (dB)")
+                # # plt.xlabel("Frequência (Hz)")
+                # rc = (max(dT) - min(dT)) / 2
+                # adicionar_mensagem("Resíduo do Conjugado: " + str(round(rc, 4)) + " Nm")
 
         if mi_ > 0:
             plt.figure(8)
@@ -2756,8 +2778,8 @@ def principal():
         frame_bd = tk.Frame(j3)
         frame_bd.pack()
 
-        img_org = Image.open(
-            r"logo_smit.png")
+        # img_org = Image.open(r"logo_smit.png")
+        img_org = Image.open(image_path)
         escala_im = 0.2
         img_l = int(img_org.width * escala_im)
         img_h = int(img_org.height * escala_im)
@@ -4147,7 +4169,8 @@ x=(tela_l//2)-(jan_l//2)
 y=(tela_h//2)-(jan_h//2)
 j0.geometry(f"{jan_l}x{jan_h}+{x}+{y}")
 
-img_org=Image.open(r"logo_smit.png")
+# img_org=Image.open(r"logo_smit.png")
+img_org = Image.open(image_path)
 escala_im=0.2
 img_l=int(img_org.width*escala_im)
 img_h=int(img_org.height*escala_im)
