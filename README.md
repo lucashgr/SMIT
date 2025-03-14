@@ -1,11 +1,11 @@
 # SMIT
 SMIT, Simulador do Motor de Indução Trifásico, or 3-phase Induction Motor Simulator, is an open source program developed in Python that allows you to simulate an induction motor using catalog data or data obtained through tests.
 
-Este aplicativo foi desenvolvido pelo mestrando Lucas Henrique Gonçalves Ribeiro e sua orientadora, a professora Dr. Lane Maria Rabelo, do Programa de Pós Graduação em Engenharia Elétrica (PPGEL) da Universidade Federal de São João del-Rei. A ideia do trabalho foi desenvolver um programa em Python que permitisse que os usuários simulassem motores de indução trifásicos, com ou sem falhas, utilizando modelos computacionais.
-No GitHub estão disponíveis o algoritmo em Python e o manual de instruções do SMIT. Devido ao tamanho, o upload do executável foi feito no SourceForge https://sourceforge.net/projects/smit/
+This application was developed by master's student Lucas Henrique Gonçalves Ribeiro and his advisor, Professor Dr. Lane Maria Rabelo, from the Graduate Program in Electrical Engineering (PPGEL) at the Federal University of São João del-Rei. The goal of the work was to develop a Python program that allows users to simulate three-phase induction motors, with or without faults, using computational models.
 
-Infelizmente, não sou muito experiente em construir aplicativos, portanto não consegui resolver os problemas de segurança do executável, fazendo com que ele ative os antivírus. Porém o algoritmo não possui nenhum risco proposital à segurança da máquina. 
+The Python algorithm and the SMIT user manual, in both Portuguese and English, are available on GitHub. Due to its size, the executable was uploaded to SourceForge: https://sourceforge.net/projects/smit/
 
-Qualquer dúvida ou opiniões, basta basta entrar em contato através do e-mail: lucash.gribeiro@gmail.com
+Unfortunately, I am not very experienced in building applications, so I was unable to resolve the security issues with the executable, causing it to trigger antivirus software. However, the algorithm poses no intentional security risk to the machine.
 
-Próximas atualizações: Disponibilizar o SMIT em inglês.
+For any questions or feedback, please feel free to contact me via email: lucash.gribeiro@gmail.com.
+
